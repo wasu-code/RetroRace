@@ -1,11 +1,11 @@
 #include <LCD_I2C.h>
+#include <TimerOne.h>
  
 LCD_I2C lcd(0x27, 16, 2); //0x27 lub 0x3F
  
  //Player and Enemies
 int enemiesX[] = {0, 1, 3, 1, 0};
 int enemiesY[] = {15, 12, 10, 8, 6};
-//int enemiesNumber = 5; // !! length of arrays above
 int playerX = 2; //start position for player
 int speed = 150; //the lower value the slower it goes
 
@@ -98,9 +98,6 @@ int rightButtonState;
 int leftPreviousState = HIGH;
 int rightPreviousState = HIGH;
 
-int lc=0;
-int rc=0;
-
 void checkButton() {
   
   leftButtonState = digitalRead(buttonLeft);
@@ -118,12 +115,7 @@ void checkButton() {
   leftPreviousState = leftButtonState;  
   rightPreviousState = rightButtonState;
   
-
   //delay(100);
-  
-  
-
-
 }
  
 void moveAll() {
@@ -132,9 +124,6 @@ void moveAll() {
     if(enemiesY[i] < 0) {
         createEnemy(i); //replace enemy at i
     }
-
-    updatePlayer();
-
   }
 }
 
@@ -165,35 +154,51 @@ void playerDisplay() {
 void enemiesDisplay() {
   for(int i = 0; i < sizeof(enemiesX) / sizeof(int); i++) {
 
-    if (enemiesY[i] > 0 || enemiesX[i] != playerX) {
-      switch(enemiesX[i]) {
+    switch(enemiesX[i]) {
             case 0:
-              lcd.setCursor(enemiesY[i], 0);
-              lcd.write(2);
-              break;
+                lcd.setCursor(enemiesY[i], 0);
+                if(enemiesY[i] == 0 && playerX == 1) {
+                  lcd.write(5);
+                } else if(enemiesY[i] == 0 && playerX == 0) {
+                  alive = false;
+                } else {
+                  lcd.write(2);
+                }
+                break;
+                
             case 1:
-              lcd.setCursor(enemiesY[i], 0);
-              lcd.write(3);
-              break;
+                lcd.setCursor(enemiesY[i], 0);
+                if(enemiesY[i] == 0 && playerX == 0) {
+                  lcd.write(6);
+                } else if(enemiesY[i] == 0 && playerX == 1) {
+                  alive = false;
+                } else {
+                  lcd.write(3);
+                }
+                break;
+                
             case 2:
-              lcd.setCursor(enemiesY[i], 1);
-              lcd.write(2);
-              break;
+                lcd.setCursor(enemiesY[i], 1);
+                if(enemiesY[i] == 0 && playerX == 3) {
+                  lcd.write(5);
+                } else if(enemiesY[i] == 0 && playerX == 2) {
+                  alive = false;
+                } else {
+                  lcd.write(2);
+                }
+                break;
+                
             case 3:
-              lcd.setCursor(enemiesY[i], 1);
-              lcd.write(3);
-              break;
-          }
-    } else { //zderzenie
-      alive = false;
-    }
-
-
-
-
-    updatePlayer();
-
-
+                lcd.setCursor(enemiesY[i], 1);
+                if(enemiesY[i] == 0 && playerX == 2) {
+                  lcd.write(6);
+                } else if(enemiesY[i] == 0 && playerX == 3) {
+                  alive = false;
+                } else {
+                  lcd.write(3);
+                }
+                break;
+        }
   }
 }
 
@@ -201,18 +206,13 @@ void createEnemy(int i) {
   enemiesX[i] = random(3);
   enemiesY[i] = 15;
 }
-
-void updatePlayer() {
-  checkButton();
-  playerDisplay();
-}
  
 void setup()
 {
     pinMode(buttonLeft, INPUT_PULLUP);
     pinMode(buttonRight, INPUT_PULLUP);
-    pinMode(buttonLeft, INPUT);
-    pinMode(buttonRight, INPUT);
+    //pinMode(buttonLeft, INPUT);
+    //pinMode(buttonRight, INPUT);
     
     
     lcd.begin();
@@ -227,21 +227,29 @@ void setup()
     lcd.createChar(6, playerObstacleRight);
 
     Serial.begin(9600);//xx
+
+    //attachInterrupt(buttonLeft,checkButton,FALLING);
+    //attachInterrupt(digitalPinToInterrupt(buttonRight),checkButton,LOW);
+    
+    Timer1.initialize(100000);
+    Timer1.attachInterrupt(checkButton);
 }
  
 void loop()
 {
   if(alive) {
     lcd.clear();
-
-    enemiesDisplay();
+    moveAll();
+    //playerDisplay(); 
+    //enemiesDisplay();
     
-    for (int a=0;a<speed;a++) { 
-      updatePlayer();
+    //delay(speed);
+    for (int a=0;a<speed-120;a++) { 
+      playerDisplay(); 
+      enemiesDisplay();
       delay(1);
     }
-
-    moveAll();
+    
 
   } else {
     lcd.setCursor(0, playerX/2);
@@ -249,9 +257,5 @@ void loop()
     lcd.setCursor(8, 0);
     lcd.print("YOU LOSE");
   }
-
-
-
-
 
 }
