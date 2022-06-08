@@ -1,15 +1,25 @@
 #include <LCD_I2C.h>
 #include <TimerOne.h>
  
-LCD_I2C lcd(0x27, 16, 2); //0x27 lub 0x3F
+LCD_I2C lcd(0x3F, 16, 2); //0x27 lub 0x3F
  
- //Player and Enemies
-int enemiesX[] = {0, 1, 3, 1, 0};
-int enemiesY[] = {15, 12, 10, 8, 6};
+//Player and Enemies
+int enemiesX[] = {0, 1, 3, 1, 0, 2};
+int enemiesY[] = {15, 12, 10, 8, 6, 7};
 int playerX = 2; //start position for player
-int speed = 150; //the lower value the slower it goes
+int speed = 30; //the lower value the slower it goes
 
 bool alive = true; //is player alive? -> should game continue?
+
+ 
+//Pins
+int buttonLeft = 8;
+int buttonRight = 5;
+
+int leftButtonState;
+int rightButtonState;
+int leftPreviousState = HIGH;
+int rightPreviousState = HIGH;
 
 uint8_t playerRight[8] =
 {
@@ -88,15 +98,6 @@ uint8_t playerObstacleRight[8] =
     0b11110,
     0b01010,
 };
- 
-//Pins
-int buttonLeft = 8;
-int buttonRight = 5;
-
-int leftButtonState;
-int rightButtonState;
-int leftPreviousState = HIGH;
-int rightPreviousState = HIGH;
 
 void checkButton() {
   
@@ -105,11 +106,9 @@ void checkButton() {
 
   if(leftButtonState == LOW && leftPreviousState != LOW) {
     if(playerX > 0) {playerX--;};
-    //Serial.print("Left Button pressed\n");//xx
   } 
   if(rightButtonState == LOW && rightPreviousState != LOW) {
     if(playerX < 3) {playerX++;};
-    //Serial.print("Right Button pressed\n");
   } 
     
   leftPreviousState = leftButtonState;  
@@ -203,7 +202,7 @@ void enemiesDisplay() {
 }
 
 void createEnemy(int i) {
-  enemiesX[i] = random(3);
+  enemiesX[i] = random(4);
   enemiesY[i] = 15;
 }
  
@@ -211,8 +210,6 @@ void setup()
 {
     pinMode(buttonLeft, INPUT_PULLUP);
     pinMode(buttonRight, INPUT_PULLUP);
-    //pinMode(buttonLeft, INPUT);
-    //pinMode(buttonRight, INPUT);
     
     
     lcd.begin();
@@ -226,11 +223,6 @@ void setup()
     lcd.createChar(5, playerObstacleLeft);
     lcd.createChar(6, playerObstacleRight);
 
-    Serial.begin(9600);//xx
-
-    //attachInterrupt(buttonLeft,checkButton,FALLING);
-    //attachInterrupt(digitalPinToInterrupt(buttonRight),checkButton,LOW);
-    
     Timer1.initialize(100000);
     Timer1.attachInterrupt(checkButton);
 }
@@ -240,14 +232,11 @@ void loop()
   if(alive) {
     lcd.clear();
     moveAll();
-    //playerDisplay(); 
-    //enemiesDisplay();
     
-    //delay(speed);
-    for (int a=0;a<speed-120;a++) { 
-      playerDisplay(); 
+    for (int a=0;a<speed;a++) { 
+      playerDisplay();
       enemiesDisplay();
-      delay(1);
+      delay(5); 
     }
     
 
@@ -256,6 +245,8 @@ void loop()
     lcd.print("X"); //mark place of death
     lcd.setCursor(8, 0);
     lcd.print("YOU LOSE");
+    delay(5000); //continue after 5s
+    alive=true; //reborn
   }
 
 }
